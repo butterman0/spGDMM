@@ -69,7 +69,7 @@ formula_use = as.formula(paste("~ 0 +",paste(
   paste("iSpline(`",colnames(X),"`,degree=",deg - 1 ,",df = ",df_use, 
         " ,intercept = TRUE)",sep = ""),collapse = "+")))
 
-# combine distance and environmental I-spline bases
+# combine distance and environmental I-spline basange(X_poly.shape[1]-2)es
 
 I_spline_bases = model.matrix(formula_use,data = X)
 
