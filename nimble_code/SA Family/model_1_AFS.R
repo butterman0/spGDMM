@@ -1,4 +1,4 @@
-library(splines)
+# library(splines)
 library(fields)
 library(splines2)
 library(nimble)
@@ -11,7 +11,7 @@ rm(list = ls())
 # load in and parse data
 #----------------------------------------------------------------
 
-dat_all = read.csv("../../data/sa_family_data.csv")
+dat_all = read.csv('/home/harold/Code/spGDMM-code/data/sa_family_data.csv')
 
 # Parse data into location, environmental variables, and cover/presence data
 
@@ -105,10 +105,13 @@ row_ind = tmp[upper.tri(tmp)]
 
 lm_mod= lm(log(Z) ~ X_GDM)
 
+print("Starting BFGS optimisation")
 
 lm_out = optim(c(.3, ifelse(coef(lm_mod)[-1]> 0,log(coef(lm_mod)[-1]), -10),rnorm(ns)) ,function(par){
   sum((log(Z) - par[1] - X_GDM %*% exp(par[2:(p + 1)]))^2)
 },method = "BFGS")
+
+print("Finished fitting linear model and BFGS")
 
 #------------------------------------------------------------------------
 # Fix spatial range parameter (rho = 1 / phi)
@@ -129,7 +132,7 @@ p_sigma = ncol(X_sigma)
 # Source nimble models -- Models 1-9 match those in paper
 #------------------------------------------------------------------------
 
-source("../nimble_models.R")
+source("/home/harold/Code/spGDMM-code/nimble_code/nimble_models.R")
 
 # create constants for nimble model
 
