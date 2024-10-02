@@ -155,19 +155,19 @@ inits <- list(beta_0 = lm_out$par[1],
               psi = lm_out$par[-(1:(p+1))])
 
 #### "nimble_code1" is model 1 in paper. Change to what you want in nimble_models.R.
+suppressWarnings({
+  model <- nimbleModel(nimble_code1, constants = constants, data = data, inits = inits)
 
-model <- nimbleModel(nimble_code1, constants = constants, data = data, inits = inits)
+  mcmcConf <- configureMCMC(model)
 
-mcmcConf <- configureMCMC(model)
-
-# Block sampler for beta_0, log(\beta_{jk}), and \beta_{\sigma}
-# MCMC may work better including psi in this blocking
-# Some models (1,4,7) won't have beta_sigma
-mcmcConf$removeSamplers(c("beta_0",'log_beta','sigma2'))
-# mcmcConf$addSampler(target = c("beta_0",'log_beta',"sigma2"), type = 'RW_block')
-mcmcConf$addSampler(target = c("beta_0",'log_beta','sigma2'), 
-                    type = 'AF_slice')
-# 
+  # Block sampler for beta_0, log(\beta_{jk}), and \beta_{\sigma}
+  # MCMC may work better including psi in this blocking
+  # Some models (1,4,7) won't have beta_sigma
+  mcmcConf$removeSamplers(c("beta_0",'log_beta','sigma2'))
+  # mcmcConf$addSampler(target = c("beta_0",'log_beta',"sigma2"), type = 'RW_block')
+  mcmcConf$addSampler(target = c("beta_0",'log_beta','sigma2'), 
+                      type = 'AF_slice')
+})
 # May need to change depending on model
 # For example, models 1, 4, and 7 will have "sigma2" instead of "beta_sigma"
 # For example, models 1, 2, and 3 will not have "psi"
@@ -200,7 +200,7 @@ saveRDS(data.frame(model = 1,
                    lppd = post_samples$WAIC$lppd
                    ),"mod1_sa.rds")
 
-rm(list=ls())
+# rm(list=ls())
 
 # ##### A few trace plot
 # plot(post_samples$samples[,"beta_0"],type= "l")
