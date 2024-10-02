@@ -160,10 +160,17 @@ suppressWarnings({
 
   mcmcConf <- configureMCMC(model)
 
+# Remove default samplers in order to define our own.
+
   # Block sampler for beta_0, log(\beta_{jk}), and \beta_{\sigma}
   # MCMC may work better including psi in this blocking
   # Some models (1,4,7) won't have beta_sigma
   mcmcConf$removeSamplers(c("beta_0",'log_beta','sigma2'))
+
+# Here we can select the type of sampler we want to use e.g. RW, AF, Gibbs, Metropolis-hastings
+# Block samplers sample multiple parameters simultaneously, improves efficiency part when parameters are correlated
+# Adaptive slice sampler used here
+
   # mcmcConf$addSampler(target = c("beta_0",'log_beta',"sigma2"), type = 'RW_block')
   mcmcConf$addSampler(target = c("beta_0",'log_beta','sigma2'), 
                       type = 'AF_slice')
@@ -173,21 +180,35 @@ suppressWarnings({
 # For example, models 1, 2, and 3 will not have "psi"
 ### Here, beta represents beta* discussed in the supplement, the product of alpha_k and \beta_{k,j}
 
+# These parameters will be tracked and stored
 mcmcConf$addMonitors(c('beta_0','beta','sigma2'))
 
+# WAIC is a model comparison and validation metric in Bayesian analysis
+# Evalutes fit and penalises complexity
+# Lower score indicates better trade-off between fit and complexity. Useful to compare models.
 mcmcConf$enableWAIC = TRUE
+
+# Build the MCMC object with config
 codeMCMC <- buildMCMC(mcmcConf)
+
+# Compile the MCMC sampler and model to C in order to improve speed
 Cmodel = compileNimble(codeMCMC,model)
 
 ##### Run a super long MCMC
 ##### thin so that we get 10,000 posterior samples -- saves memory
 
+# No iterations
 n_tot = 10e3
+
+# Burn-in iterations
 n_burn = 5e3
+
+# Number of posterior samples
 n_post = n_tot - n_burn
 
 
 # You may get some warnings because we didn't initialize log_V where Z = 1.
+# Thin sets how frequently to record samples
 st = proc.time()
 post_samples <- runMCMC(Cmodel$codeMCMC,niter = n_tot,nburnin = n_burn,
                         thin = 1,WAIC = TRUE)
@@ -199,6 +220,8 @@ saveRDS(data.frame(model = 1,
                    p_WAIC =  post_samples$WAIC$pWAIC,
                    lppd = post_samples$WAIC$lppd
                    ),"mod1_sa.rds")
+
+saveRDS(post_samples, "mod1_FA_post_samples.rds")
 
 # rm(list=ls())
 

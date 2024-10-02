@@ -1,4 +1,4 @@
-library(splines)
+# library(splines)
 library(fields)
 library(splines2)
 library(nimble)
@@ -9,8 +9,8 @@ rm(list = ls())
 # load in and parse data
 #----------------------------------------------------------------
 
-panama_data = read.csv("../../data/Panama_species.csv")[,-1]
-panama_env = read.csv("../../data/Panama_env.csv")
+panama_data = read.csv("/home/harold/Code/spGDMM-code/data/Panama_species.csv")[,-1]
+panama_env = read.csv("/home/harold/Code/spGDMM-code/data/Panama_env.csv")
 
 # Parse data into location, environmental variables, and cover/presence data
 
@@ -128,7 +128,7 @@ p_sigma = ncol(X_sigma)
 # Source nimble models -- Models 1-9 match those in paper
 #------------------------------------------------------------------------
 
-source("../nimble_models.R")
+source("/home/harold/Code/spGDMM-code/nimble_code/nimble_models.R")
 
 # create constants for nimble model
 
@@ -194,12 +194,14 @@ saveRDS(data.frame(model = 1,
                    lppd = post_samples$WAIC$lppd),
         "mod1_panama.rds")
 
-rm(list=ls())
+saveRDS(post_samples,"mod1_panama_post_samples.rds")
+
+# rm(list=ls())
 
 # ##### A few trace plot
-plot(post_samples$samples[,"beta_0"],type= "l")
-plot(post_samples$samples[,"log_beta[9]"],type= "l")
-plot(post_samples$samples[,"beta[9]"],type= "l")
-plot(post_samples$samples[,"beta_sigma[2]"],type= "l")
-plot(post_samples$samples[,"psi[2]"],type= "l")
-plot(post_samples$samples[,"sig2_psi"],type= "l")
+# plot(post_samples$samples[,"beta_0"],type= "l")
+# plot(post_samples$samples[,"log_beta[9]"],type= "l")
+# plot(post_samples$samples[,"beta[9]"],type= "l")
+# plot(post_samples$samples[,"beta_sigma[2]"],type= "l")
+# plot(post_samples$samples[,"psi[2]"],type= "l")
+# plot(post_samples$samples[,"sig2_psi"],type= "l")
