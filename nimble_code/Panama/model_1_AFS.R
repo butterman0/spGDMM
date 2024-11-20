@@ -3,6 +3,7 @@ library(fields)
 library(splines2)
 library(nimble)
 library(vegan)
+library(httpgd)
 rm(list = ls())
 
 #----------------------------------------------------------------
@@ -196,12 +197,15 @@ saveRDS(data.frame(model = 1,
 
 saveRDS(post_samples,"mod1_panama_post_samples.rds")
 
-# rm(list=ls())
+##### A few trace plot
+hgd()
+plot(post_samples$samples[, "beta[1]"], type = "l", main = "Trace Plot for beta[1]")
 
-# ##### A few trace plot
-# plot(post_samples$samples[,"beta_0"],type= "l")
-# plot(post_samples$samples[,"log_beta[9]"],type= "l")
+plot(post_samples$samples[, "beta[2]"], type = "l", main = "Trace Plot for beta[2]")
 # plot(post_samples$samples[,"beta[9]"],type= "l")
 # plot(post_samples$samples[,"beta_sigma[2]"],type= "l")
 # plot(post_samples$samples[,"psi[2]"],type= "l")
 # plot(post_samples$samples[,"sig2_psi"],type= "l")
+
+# rm(list=ls())
+
