@@ -2,3 +2,4 @@
 *.Rout
 nimble_code/SA Family/CSV-comparisons/*
 1_data/2_processed/
+1_data/4_interim
