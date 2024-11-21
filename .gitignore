@@ -1,3 +1,4 @@
 *.rds
 *.Rout
 nimble_code/SA Family/CSV-comparisons/*
+1_data/2_processed/
