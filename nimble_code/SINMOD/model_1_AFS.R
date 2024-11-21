@@ -10,14 +10,15 @@ rm(list = ls())
 # load in and parse data
 #----------------------------------------------------------------
 
-panama_data = read.csv("data/Panama_species.csv")[,-1]
-panama_env = read.csv("data/Panama_env.csv")
+synthetic_otu_tab = read.csv("data/synthetic/otu_table.csv")[,-1]
+midnor_env  = read.csv("data/synthetic/midnor.csv")
+sampled_locations = read.csv("data/synthetic/sampled_locations.csv")
 
 # Parse data into location, environmental variables, and cover/presence data
 
-location_mat = panama_env[,2:3] 
-envr_use = panama_env[,4:5] 
-species_mat = panama_data
+location_mat = sampled_locations
+envr_use = midnor_env
+species_mat = synthetic_otu_tab
 
 # save number of sites
 
@@ -50,7 +51,7 @@ mean(Z == 1)
 
 # Calculate geographical distance in km
 
-dist_mat = as.matrix(rdist(cbind(location_mat$EW.coord,location_mat$NS.coord))/1e3)
+dist_mat = as.matrix(rdist(cbind(location_mat$x,location_mat$y))*800/1000)
 vec_distance = dist_mat[upper.tri(dist_mat)]
 
 # Define X to be environmental variables or a subset of them.
@@ -172,7 +173,7 @@ mcmcConf$addMonitors(c('beta_0','beta','sigma2'))
 
 mcmcConf$enableWAIC = TRUE
 codeMCMC <- buildMCMC(mcmcConf)
-Cmodel = compileNimble(codeMCMC,model)
+Cmodel = compileNimble(codeMCMC,model)#, showCompilerOutput = TRUE)
 
 ##### Run a super long MCMC
 ##### thin so that we get 10,000 posterior samples -- saves memory
@@ -197,10 +198,10 @@ saveRDS(data.frame(model = 1,
 
 saveRDS(post_samples,"mod1_panama_post_samples.rds")
 
+
 ##### A few trace plot
 hgd()
 plot(post_samples$samples[, "beta[1]"], type = "l", main = "Trace Plot for beta[1]")
-
 plot(post_samples$samples[, "beta[2]"], type = "l", main = "Trace Plot for beta[2]")
 # plot(post_samples$samples[,"beta[9]"],type= "l")
 # plot(post_samples$samples[,"beta_sigma[2]"],type= "l")

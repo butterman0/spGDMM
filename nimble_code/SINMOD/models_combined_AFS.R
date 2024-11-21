@@ -3,15 +3,14 @@ library(fields)
 library(splines2)
 library(nimble)
 library(vegan)
-library(httpgd)
 rm(list = ls())
 
 #----------------------------------------------------------------
 # load in and parse data
 #----------------------------------------------------------------
 
-panama_data = read.csv("data/Panama_species.csv")[,-1]
-panama_env = read.csv("data/Panama_env.csv")
+panama_data = read.csv("/home/harold/Code/spGDMM-code/data/Panama_species.csv")[,-1]
+panama_env = read.csv("/home/harold/Code/spGDMM-code/data/Panama_env.csv")
 
 # Parse data into location, environmental variables, and cover/presence data
 
@@ -129,7 +128,7 @@ p_sigma = ncol(X_sigma)
 # Source nimble models -- Models 1-9 match those in paper
 #------------------------------------------------------------------------
 
-source("nimble_code/nimble_models.R")
+source("/home/harold/Code/spGDMM-code/nimble_code/nimble_models.R")
 
 # create constants for nimble model
 
@@ -153,59 +152,73 @@ inits <- list(beta_0 = lm_out$par[1],
 
 #### "nimble_code1" is model 1 in paper. Change to what you want in nimble_models.R.
 
-model <- nimbleModel(nimble_code1, constants = constants, data = data, inits = inits)
+for (i in 1:9) {
+  nimble_code <- get(paste0("nimble_code", i))
+  
+  model <- nimbleModel(nimble_code, constants = constants, data = data, inits = inits)
+  
+  mcmcConf <- configureMCMC(model)
+  
+  # Block sampler for beta_0, log(\beta_{jk}), and \beta_{\sigma}
+  # MCMC may work better including psi in this blocking
+  # Some models (1,4,7) won't have beta_sigma
 
-mcmcConf <- configureMCMC(model)
+  if (i == 1) {
+    mcmcConf$removeSamplers(c("beta_0", 'log_beta', 'sigma2'))
+    mcmcConf$addSampler(target = c("beta_0", 'log_beta', 'sigma2'), type = 'AF_slice')
+    mcmcConf$addMonitors(c('beta_0', 'log_beta', 'sigma2'))
+  }
+  if (i == 2 || i == 3) {
+    mcmcConf$removeSamplers(c("beta_0", 'log_beta', 'beta_sigma'))
+    mcmcConf$addSampler(target = c("beta_0", 'log_beta', 'beta_sigma'), type = 'AF_slice')
+    mcmcConf$addMonitors(c('beta_0', 'log_beta', 'beta_sigma'))
+  }
 
-# Block sampler for beta_0, log(\beta_{jk}), and \beta_{\sigma}
-# MCMC may work better including psi in this blocking
-# Some models (1,4,7) won't have beta_sigma
-mcmcConf$removeSamplers(c("beta_0",'log_beta','sigma2'))
-# mcmcConf$addSampler(target = c("beta_0",'log_beta',"sigma2"), type = 'RW_block')
-mcmcConf$addSampler(target = c("beta_0",'log_beta','sigma2'), 
-                    type = 'AF_slice')
-# May need to change depending on model
-# For example, models 1, 4, and 7 will have "sigma2" instead of "beta_sigma"
-# For example, models 1, 2, and 3 will not have "psi"
+  if (i == 4 || i == 7) {
+    mcmcConf$removeSamplers(c("beta_0", 'log_beta', "psi", "sig2_psi", 'sigma2'))
+    mcmcConf$addSampler(target = c("beta_0", 'log_beta', "psi", "sig2_psi", 'sigma2'), type = 'AF_slice')
+    mcmcConf$addMonitors(c('beta_0', 'log_beta', 'psi', 'sig2_psi', 'sigma2'))
+  }
 
-mcmcConf$addMonitors(c('beta_0','beta','sigma2'))
+  if (i == 5 || i == 6 || i == 8 || i == 9) {
+    mcmcConf$removeSamplers(c("beta_0", 'log_beta', "psi", "sig2_psi", 'beta_sigma'))
+    mcmcConf$addSampler(target = c("beta_0", 'log_beta', "psi", "sig2_psi", 'beta_sigma'), type = 'AF_slice')
+    mcmcConf$addMonitors(c('beta_0', 'beta', 'beta_sigma', 'psi', "sig2_psi"))
+  }
+  
+  mcmcConf$enableWAIC = TRUE
+  codeMCMC <- buildMCMC(mcmcConf)
+  Cmodel = compileNimble(codeMCMC, model)
+  
+  ##### Run a super long MCMC
+  ##### thin so that we get 10,000 posterior samples -- saves memory
+  
+  n_tot = 20e3
+  n_burn = 10e3
+  n_post = n_tot - n_burn
+  
+  # You may get some warnings because we didn't initialize log_V where Z = 1.
+  st = proc.time()
+  post_samples <- runMCMC(Cmodel$codeMCMC, niter = n_tot, nburnin = n_burn,
+                          thin = 1, WAIC = TRUE)
+  elapsed = proc.time() - st
+  
+  saveRDS(data.frame(model = i,
+                     time_mins = elapsed[3] / 60,
+                     WAIC = post_samples$WAIC$WAIC,
+                     p_WAIC = post_samples$WAIC$pWAIC,
+                     lppd = post_samples$WAIC$lppd),
+          paste0("mod", i, "_panama.rds"))
+  
+  saveRDS(post_samples, paste0("mod", i, "_panama_post_samples.rds"))
+}
 
-mcmcConf$enableWAIC = TRUE
-codeMCMC <- buildMCMC(mcmcConf)
-Cmodel = compileNimble(codeMCMC,model)
+# rm(list=ls())
 
-##### Run a super long MCMC
-##### thin so that we get 10,000 posterior samples -- saves memory
-
-n_tot = 20e3
-n_burn = 10e3
-n_post = n_tot - n_burn
-
-
-# You may get some warnings because we didn't initialize log_V where Z = 1.
-st = proc.time()
-post_samples <- runMCMC(Cmodel$codeMCMC,niter = n_tot,nburnin = n_burn,
-                        thin = 1,WAIC = TRUE)
-elapsed = proc.time() - st
-
-saveRDS(data.frame(model = 1,
-                   time_mins = elapsed[3]/60,
-                   WAIC = post_samples$WAIC$WAIC,
-                   p_WAIC =  post_samples$WAIC$pWAIC,
-                   lppd = post_samples$WAIC$lppd),
-        "mod1_panama.rds")
-
-saveRDS(post_samples,"mod1_panama_post_samples.rds")
-
-##### A few trace plot
-hgd()
-plot(post_samples$samples[, "beta[1]"], type = "l", main = "Trace Plot for beta[1]")
-
-plot(post_samples$samples[, "beta[2]"], type = "l", main = "Trace Plot for beta[2]")
+# ##### A few trace plot
+# plot(post_samples$samples[,"beta_0"],type= "l")
+# plot(post_samples$samples[,"log_beta[9]"],type= "l")
 # plot(post_samples$samples[,"beta[9]"],type= "l")
 # plot(post_samples$samples[,"beta_sigma[2]"],type= "l")
 # plot(post_samples$samples[,"psi[2]"],type= "l")
 # plot(post_samples$samples[,"sig2_psi"],type= "l")
-
-# rm(list=ls())
-

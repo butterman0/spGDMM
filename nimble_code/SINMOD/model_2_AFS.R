@@ -1,17 +1,16 @@
-# library(splines)
+library(splines)
 library(fields)
 library(splines2)
 library(nimble)
 library(vegan)
-library(httpgd)
 rm(list = ls())
 
 #----------------------------------------------------------------
 # load in and parse data
 #----------------------------------------------------------------
 
-panama_data = read.csv("data/Panama_species.csv")[,-1]
-panama_env = read.csv("data/Panama_env.csv")
+panama_data = read.csv("/home/harold/Code/spGDMM-code/data/Panama_species.csv")[,-1]
+panama_env = read.csv("/home/harold/Code/spGDMM-code/data/Panama_env.csv")
 
 # Parse data into location, environmental variables, and cover/presence data
 
@@ -129,7 +128,7 @@ p_sigma = ncol(X_sigma)
 # Source nimble models -- Models 1-9 match those in paper
 #------------------------------------------------------------------------
 
-source("nimble_code/nimble_models.R")
+source("../nimble_models.R")
 
 # create constants for nimble model
 
@@ -151,24 +150,26 @@ inits <- list(beta_0 = lm_out$par[1],
               beta_sigma = c(-5,-20,12,2),
               psi = lm_out$par[-(1:(p+1))])
 
-#### "nimble_code1" is model 1 in paper. Change to what you want in nimble_models.R.
+#### "nimble_code2" is model 2 in paper. Change to what you want in nimble_models.R.
 
-model <- nimbleModel(nimble_code1, constants = constants, data = data, inits = inits)
+model <- nimbleModel(nimble_code2, constants = constants, data = data, inits = inits)
 
 mcmcConf <- configureMCMC(model)
 
 # Block sampler for beta_0, log(\beta_{jk}), and \beta_{\sigma}
 # MCMC may work better including psi in this blocking
 # Some models (1,4,7) won't have beta_sigma
-mcmcConf$removeSamplers(c("beta_0",'log_beta','sigma2'))
-# mcmcConf$addSampler(target = c("beta_0",'log_beta',"sigma2"), type = 'RW_block')
-mcmcConf$addSampler(target = c("beta_0",'log_beta','sigma2'), 
+mcmcConf$removeSamplers(c("beta_0",'log_beta','beta_sigma'))
+# mcmcConf$addSampler(target = c("beta_0",'log_beta',"beta_sigma"), type = 'RW_block')
+mcmcConf$addSampler(target = c("beta_0",'log_beta','beta_sigma'), 
                     type = 'AF_slice')
+# 
 # May need to change depending on model
 # For example, models 1, 4, and 7 will have "sigma2" instead of "beta_sigma"
 # For example, models 1, 2, and 3 will not have "psi"
+### Here, beta represents beta* discussed in the supplement, the product of alpha_k and \beta_{k,j}
 
-mcmcConf$addMonitors(c('beta_0','beta','sigma2'))
+mcmcConf$addMonitors(c('beta_0','beta','beta_sigma'))
 
 mcmcConf$enableWAIC = TRUE
 codeMCMC <- buildMCMC(mcmcConf)
@@ -188,24 +189,20 @@ post_samples <- runMCMC(Cmodel$codeMCMC,niter = n_tot,nburnin = n_burn,
                         thin = 1,WAIC = TRUE)
 elapsed = proc.time() - st
 
-saveRDS(data.frame(model = 1,
+saveRDS(data.frame(model = 2,
                    time_mins = elapsed[3]/60,
                    WAIC = post_samples$WAIC$WAIC,
                    p_WAIC =  post_samples$WAIC$pWAIC,
-                   lppd = post_samples$WAIC$lppd),
-        "mod1_panama.rds")
+                   lppd = post_samples$WAIC$lppd
+                   ),"mod2_panama.rds")
 
-saveRDS(post_samples,"mod1_panama_post_samples.rds")
+rm(list=ls())
 
-##### A few trace plot
-hgd()
-plot(post_samples$samples[, "beta[1]"], type = "l", main = "Trace Plot for beta[1]")
-
-plot(post_samples$samples[, "beta[2]"], type = "l", main = "Trace Plot for beta[2]")
+# ##### A few trace plot
+# plot(post_samples$samples[,"beta_0"],type= "l")
+# plot(post_samples$samples[,"log_beta[9]"],type= "l")
 # plot(post_samples$samples[,"beta[9]"],type= "l")
+# 
 # plot(post_samples$samples[,"beta_sigma[2]"],type= "l")
 # plot(post_samples$samples[,"psi[2]"],type= "l")
 # plot(post_samples$samples[,"sig2_psi"],type= "l")
-
-# rm(list=ls())
-
