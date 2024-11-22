@@ -10,9 +10,9 @@ rm(list = ls())
 # load in and parse data
 #----------------------------------------------------------------
 
-synthetic_otu_tab = read.csv("data/synthetic/otu_table.csv")[,-1]
-midnor_env  = read.csv("data/synthetic/midnor.csv")
-sampled_locations = read.csv("data/synthetic/sampled_locations.csv")
+synthetic_otu_tab = read.csv("1_data/1_raw/synthetic_abundance/otu_table.csv")[,-1]
+midnor_env  = read.csv("1_data/2_processed/training/midnor_training.csv")
+sampled_locations = read.csv("1_data/1_raw/synthetic_abundance/sampled_locations.csv")
 
 # Parse data into location, environmental variables, and cover/presence data
 
@@ -130,7 +130,7 @@ p_sigma = ncol(X_sigma)
 # Source nimble models -- Models 1-9 match those in paper
 #------------------------------------------------------------------------
 
-source("nimble_code/nimble_models.R")
+source("3_src/2_models/nimble_models.R")
 
 # create constants for nimble model
 
@@ -196,7 +196,14 @@ saveRDS(data.frame(model = 1,
                    lppd = post_samples$WAIC$lppd),
         "mod1_panama.rds")
 
-saveRDS(post_samples,"mod1_panama_post_samples.rds")
+saveRDS(post_samples,"4_trained_models/mod1_SINMOD_post_samples.rds")
+saveRDS(data.frame(model = 1,
+                   time_mins = elapsed[3]/60,
+                   WAIC = post_samples$WAIC$WAIC,
+                   p_WAIC =  post_samples$WAIC$pWAIC,
+                   lppd = post_samples$WAIC$lppd
+                   ),"4_trained_models/mod1_SINMOD.rds")
+
 
 
 ##### A few trace plot
@@ -208,5 +215,5 @@ plot(post_samples$samples[, "beta[2]"], type = "l", main = "Trace Plot for beta[
 # plot(post_samples$samples[,"psi[2]"],type= "l")
 # plot(post_samples$samples[,"sig2_psi"],type= "l")
 
-# rm(list=ls())
+rm(list=ls())
 
