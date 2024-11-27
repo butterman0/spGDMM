@@ -189,13 +189,6 @@ post_samples <- runMCMC(Cmodel$codeMCMC,niter = n_tot,nburnin = n_burn,
                         thin = 1,WAIC = TRUE)
 elapsed = proc.time() - st
 
-saveRDS(data.frame(model = 1,
-                   time_mins = elapsed[3]/60,
-                   WAIC = post_samples$WAIC$WAIC,
-                   p_WAIC =  post_samples$WAIC$pWAIC,
-                   lppd = post_samples$WAIC$lppd),
-        "mod1_panama.rds")
-
 saveRDS(post_samples,"4_trained_models/mod1_SINMOD_post_samples.rds")
 saveRDS(data.frame(model = 1,
                    time_mins = elapsed[3]/60,
@@ -203,6 +196,7 @@ saveRDS(data.frame(model = 1,
                    p_WAIC =  post_samples$WAIC$pWAIC,
                    lppd = post_samples$WAIC$lppd
                    ),"4_trained_models/mod1_SINMOD.rds")
+write.csv(post_samples$samples, "4_trained_models/mod1_SINMOD_post_samples.csv")
 
 
 
