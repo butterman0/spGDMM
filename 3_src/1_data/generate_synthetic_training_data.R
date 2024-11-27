@@ -7,6 +7,34 @@ suppressMessages({
 })
 
 
+
+# This script generates synthetic eDNA data, processes SINMOD data from a NetCDF file, 
+# and saves the resulting data to CSV files.
+
+# The script is divided into several sections:
+
+# 1. Create synthetic eDNA data:
+#    - Source the script to create synthetic data.
+#    - Generate a synthetic OTU table with relative abundance data for a specified number of sites and species.
+#    - Plot the abundance of species at a specified site.
+#    - Calculate and print the row sums of the OTU table.
+
+# 2. Load in data:
+#    - Open a NetCDF file containing environmental data.
+#    - Extract grid and depth information.
+#    - Print the grid size and list all variables in the NetCDF file.
+
+# 3. Fetch SINMOD data:
+#    - Source the script to fetch SINMOD data.
+#    - Set a random seed for reproducibility.
+#    - Randomly sample valid grid locations based on depth information.
+#    - Obtain SINMOD environmental data (temperature, salinity, u_velocity, v_velocity) at the sampled locations.
+
+# 4. Save data:
+#    - Save the resulting data frame with environmental data as a CSV file.
+#    - Save the sampled locations as a CSV file.
+#    - Save the synthetic eDNA data (OTU table) as a CSV file.
+
 # %%
 #----------------------------------------------------------------
 # Create synthetic eDNA data
@@ -90,6 +118,3 @@ write.csv(sampled_locations, "1_data/1_raw/synthetic_abundance/sampled_locations
 
 # Save the eDNA data (otu_table) as a CSV file
 write.csv(otu_table, "1_data/1_raw/synthetic_abundance/otu_table.csv", row.names = TRUE)
-
-
-
