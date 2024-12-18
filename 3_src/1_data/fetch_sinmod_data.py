@@ -1,7 +1,7 @@
 import xarray as xr
 import pandas as pd
 
-def fetch_sinmod_data(sinmod_data_path, sampled_locations, env_variables):
+def fetch_sinmod_data(sinmod_data_path, sampled_locations, env_variables, target=True):
     """
     Fetch SINMOD data for specific (x, y, time) combinations defined in sampled_locations.
 
@@ -24,21 +24,30 @@ def fetch_sinmod_data(sinmod_data_path, sampled_locations, env_variables):
         if var not in sinmod_data.variables:
             raise ValueError(f"Variable '{var}' not found in the SINMOD dataset.")
         
-        # Fetch data for each row in sampled_locations
-        result[var] = sampled_locations.apply(
-            lambda row: sinmod_data[var].isel(time=int(row['time_idx'])).sel(
-                xc=row['x'], 
-                yc=row['y'], 
-                method="nearest"
-            ).values.item(),
-            axis=1
-        )
-    
+        if target:
+            # Fetch data for each row in sampled_locations
+            result[var] = sampled_locations.apply(
+                lambda row: sinmod_data[var].isel(time=int(row['time_idx'])).sel(
+                    xc=row['x'], 
+                    yc=row['y'], 
+                    method="nearest"
+                ).values.item(),
+                axis=1
+            )
+        else:
+            # Iterate over each `stat` dimension for the variable
+            for stat in sinmod_data[var].stat.values:
+                # Fetch data for each stat dimension and label column as `{var}_{stat}`
+                result[f"{var}_{stat}"] = sampled_locations.apply(
+                    lambda row: sinmod_data[var].sel(stat=stat).sel(xc=row['x'], yc=row['y'], method="nearest").values.item(),
+                    axis=1
+                )
     # Close the dataset
     sinmod_data.close()
 
-    result[env_variables] = result[env_variables].fillna(0)
+    if target:
+        result[env_variables] = result[env_variables].fillna(0)
 
-    result[env_variables] = result[env_variables].div(result[env_variables].sum(axis=1), axis=0)
+        result[env_variables] = result[env_variables].div(result[env_variables].sum(axis=1), axis=0)
 
     return result
