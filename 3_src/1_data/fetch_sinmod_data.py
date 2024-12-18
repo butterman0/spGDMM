@@ -26,10 +26,9 @@ def fetch_sinmod_data(sinmod_data_path, sampled_locations, env_variables):
         
         # Fetch data for each row in sampled_locations
         result[var] = sampled_locations.apply(
-            lambda row: sinmod_data[var].sel(
-                x=row['x'], 
-                y=row['y'], 
-                time=row['time'], 
+            lambda row: sinmod_data[var].isel(time=int(row['time_idx'])).sel(
+                xc=row['x'], 
+                yc=row['y'], 
                 method="nearest"
             ).values.item(),
             axis=1
@@ -37,5 +36,9 @@ def fetch_sinmod_data(sinmod_data_path, sampled_locations, env_variables):
     
     # Close the dataset
     sinmod_data.close()
+
+    result[env_variables] = result[env_variables].fillna(0)
+
+    result[env_variables] = result[env_variables].div(result[env_variables].sum(axis=1), axis=0)
 
     return result
