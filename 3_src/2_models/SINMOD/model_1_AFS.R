@@ -63,7 +63,7 @@ vec_distance = dist_mat[upper.tri(dist_mat)]
 X = envr_use
 
 deg = 3
-knots = 1
+knots = 2
 df_use = deg + knots
 
 formula_use = as.formula(paste("~ 0 +",paste(

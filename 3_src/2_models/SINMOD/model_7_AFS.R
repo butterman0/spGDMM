@@ -1,32 +1,32 @@
-library(splines)
 library(fields)
 library(splines2)
 library(nimble)
 library(vegan)
+library(httpgd)
 rm(list = ls())
 
 #----------------------------------------------------------------
 # load in and parse data
 #----------------------------------------------------------------
 
-panama_data = read.csv("../../data/Panama_species.csv")[,-1]
-panama_env = read.csv("../../data/Panama_env.csv")
+biomod_data = read.csv('/cluster/home/haroldh/spGDMM/1_data/2_processed/training/biomod.csv')
+midnor_data = read.csv('/cluster/home/haroldh/spGDMM/1_data/2_processed/training/midnor.csv')
 
 # Parse data into location, environmental variables, and cover/presence data
 
-location_mat = panama_env[,2:3] 
-envr_use = panama_env[,4:5] 
-species_mat = panama_data
+biomod_mat <- biomod_data[,4:ncol(biomod_data)]
+envr_use <- midnor_data[,4:ncol(midnor_data)]
+location_mat <- biomod_data[,1:3]
 
 # save number of sites
 
-ns = nrow(location_mat)
+ns <- nrow(location_mat)
 
 #----------------------------------------------------------------
 # Calculate Bray-Curtis dissimilarity -- see proportion of 0's and 1's
 #----------------------------------------------------------------
 
-dist_use = as.matrix(vegdist(species_mat,"bray"))
+dist_use = as.matrix(vegdist(biomod_mat,"bray"))
 
 Z = dist_use[upper.tri(dist_use)]
 
@@ -49,7 +49,7 @@ mean(Z == 1)
 
 # Calculate geographical distance in km
 
-dist_mat = as.matrix(rdist(cbind(location_mat$EW.coord,location_mat$NS.coord))/1e3)
+dist_mat = as.matrix(rdist(cbind(location_mat$x,location_mat$y)))
 vec_distance = dist_mat[upper.tri(dist_mat)]
 
 # Define X to be environmental variables or a subset of them.
@@ -61,7 +61,7 @@ vec_distance = dist_mat[upper.tri(dist_mat)]
 X = envr_use
 
 deg = 3
-knots = 1
+knots = 2
 df_use = deg + knots
 
 formula_use = as.formula(paste("~ 0 +",paste(
@@ -129,7 +129,7 @@ p_sigma = ncol(X_sigma)
 # Source nimble models -- Models 1-9 match those in paper
 #------------------------------------------------------------------------
 
-source("../nimble_models.R")
+source("3_src/2_models/nimble_models.R")
 
 # create constants for nimble model
 
@@ -190,11 +190,18 @@ post_samples <- runMCMC(Cmodel$codeMCMC,niter = n_tot,nburnin = n_burn,
                         thin = 1,WAIC = TRUE)
 elapsed = proc.time() - st
 
+saveRDS(post_samples,"4_trained_models/mod7_SINMOD_post_samples.rds")
 saveRDS(data.frame(model = 7,
                    time_mins = elapsed[3]/60,
+                   WAIC = post_samples$WAIC$WAIC,
                    p_WAIC =  post_samples$WAIC$pWAIC,
                    lppd = post_samples$WAIC$lppd
-                   ),"mod7_panama.rds")
+                   ),"4_trained_models/mod7_SINMOD.rds")
+write.csv(post_samples$samples, "4_trained_models/mod1_SINMOD_post_samples.csv")
+
+hgd()
+plot(post_samples$samples[, "beta[1]"], type = "l", main = "Trace Plot for beta[1]")
+plot(post_samples$samples[, "beta[2]"], type = "l", main = "Trace Plot for beta[2]")
 
 rm(list=ls())
 
