@@ -1,7 +1,7 @@
 import xarray as xr
 import pandas as pd
 
-def fetch_sinmod_data(sinmod_data_path, sampled_locations, env_variables, target=True):
+def fetch_sinmod_data(sinmod_data_path, sampled_locations, env_variables, target=True, normalise=False):
     """
     Fetch SINMOD data for specific (x, y, time) combinations defined in sampled_locations.
 
@@ -47,7 +47,7 @@ def fetch_sinmod_data(sinmod_data_path, sampled_locations, env_variables, target
 
     if target:
         result[env_variables] = result[env_variables].fillna(0)
-
-        result[env_variables] = result[env_variables].div(result[env_variables].sum(axis=1), axis=0)
-
+        if normalise:
+            result[env_variables] = result[env_variables].div(result[env_variables].sum(axis=1), axis=0)
+            
     return result
