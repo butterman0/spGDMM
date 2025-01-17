@@ -189,14 +189,14 @@ post_samples <- runMCMC(Cmodel$codeMCMC,niter = n_tot,nburnin = n_burn,
                         thin = 1,WAIC = TRUE)
 elapsed = proc.time() - st
 
-saveRDS(post_samples,"4_trained_models/example_model_EOF_8of8tsuv_post_samples.rds")
+saveRDS(post_samples,"4_trained_models/example_model_EOF_8tsuv_post_samples.rds")
 saveRDS(data.frame(model = 7,
                    time_mins = elapsed[3]/60,
                    WAIC = post_samples$WAIC$WAIC,
                    p_WAIC =  post_samples$WAIC$pWAIC,
                    lppd = post_samples$WAIC$lppd
-                   ),"4_trained_models/example_model_EOF_8of8tsuv.rds")
-write.csv(post_samples$samples, "4_trained_models/example_model_EOF_8of8tsuv_post_samples.csv")
+                   ),"4_trained_models/example_model_EOF_8tsuv.rds")
+write.csv(post_samples$samples, "4_trained_models/example_model_EOF_8tsuv_post_samples.csv")
 
 hgd()
 plot(post_samples$samples[, "beta[1]"], type = "l", main = "Trace Plot for beta[1]")
