@@ -21,7 +21,7 @@ location_mat <- biomod_data[,1:3]
 # save number of sites
 
 ns <- nrow(location_mat)
-3_src/2_models/SINMOD/model_7_AFS.R
+
 #----------------------------------------------------------------
 # Calculate Bray-Curtis dissimilarity -- see proportion of 0's and 1's
 #----------------------------------------------------------------
@@ -132,7 +132,6 @@ p_sigma = ncol(X_sigma)
 source("3_src/2_models/nimble_models.R")
 
 # create constants for nimble model
-
 constants <- list(n = N, p = p, x = X_GDM,n_loc = ns,
                   p_sigma = p_sigma,X_sigma = X_sigma,R_inv = R_inv, 
                   zeros = rep(0, ns),row_ind = row_ind, col_ind = col_ind)
@@ -190,14 +189,14 @@ post_samples <- runMCMC(Cmodel$codeMCMC,niter = n_tot,nburnin = n_burn,
                         thin = 1,WAIC = TRUE)
 elapsed = proc.time() - st
 
-saveRDS(post_samples,"4_trained_models/mod7_SINMOD_post_samples.rds")
+saveRDS(post_samples,"4_trained_models/example_model_EOF_8of8tsuv_post_samples.rds")
 saveRDS(data.frame(model = 7,
                    time_mins = elapsed[3]/60,
                    WAIC = post_samples$WAIC$WAIC,
                    p_WAIC =  post_samples$WAIC$pWAIC,
                    lppd = post_samples$WAIC$lppd
-                   ),"4_trained_models/mod7_SINMOD.rds")
-write.csv(post_samples$samples, "4_trained_models/mod1_SINMOD_post_samples.csv")
+                   ),"4_trained_models/example_model_EOF_8of8tsuv.rds")
+write.csv(post_samples$samples, "4_trained_models/example_model_EOF_8of8tsuv_post_samples.csv")
 
 hgd()
 plot(post_samples$samples[, "beta[1]"], type = "l", main = "Trace Plot for beta[1]")
